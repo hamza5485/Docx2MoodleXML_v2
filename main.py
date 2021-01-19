@@ -5,18 +5,19 @@ import docx
 
 from question import Question
 
-DOCX_DIR = "docx/"
+DOCX_Q_DIR = "docx/questions/"
+DOCX_A_DIR = "docx/answers/"
 XML_DIR = "xml/"
 MULTIPLE_CHOICE = ("A.", "B.", "C.", "D.", "E.")
 TRUE_FALSE = ("1.", "2.")
-ANSWER_MARKER = " _ANSWER_"
 
-for docx_file in os.listdir(DOCX_DIR):
-    content = []
+for docx_file in os.listdir(DOCX_Q_DIR):
+    q_content = []
+    a_content = []
     question_list = []
     q_index = 1
     if docx_file != ".gitignore":
-        file_path = DOCX_DIR + docx_file
+        file_path = DOCX_Q_DIR + docx_file
         name_arr = docx_file.split(" ")
         prefix = f"{name_arr[0].upper()}_{name_arr[1]}_Q_"
         for index, p in enumerate(docx.Document(file_path).paragraphs):
@@ -26,35 +27,46 @@ for docx_file in os.listdir(DOCX_DIR):
                 if p.text != "":
                     if not (p.text.startswith(MULTIPLE_CHOICE) or p.text.startswith(TRUE_FALSE)):
                         q_name = f"{prefix}{q_index}"
-                        content.append(q_name)
-                        content.append(p.text)
+                        q_content.append(q_name)
+                        q_content.append(p.text)
                         q_index += 1
                     else:
                         opts = p.text
-                        for run in p.runs:
-                            if run.bold:
-                                opts += ANSWER_MARKER
-                        content.append(opts)
+                        q_content.append(opts)
+        # print(q_content)
 
-        for i, e in enumerate(content):
+        for answer_file in os.listdir(DOCX_A_DIR):
+            if f"{name_arr[0]} {name_arr[1]}" in answer_file:
+                answer_file_path = DOCX_A_DIR + answer_file
+                for index, p in enumerate(docx.Document(answer_file_path).paragraphs):
+                    if index == 0:
+                        pass
+                    else:
+                        if p.text != "":
+                            a_content.append(p.text)
+
+        for i, e in enumerate(q_content):
             if not (e.startswith(MULTIPLE_CHOICE) or e.startswith(TRUE_FALSE) or e.startswith(
                     f"{name_arr[0].upper()}_{name_arr[1]}_Q_")):
-                question_name = content[i - 1]
+                question_name = q_content[i - 1]
                 question_text = e
                 question_opts = {}
                 question_type = ""
-                if content[i + 1].startswith(MULTIPLE_CHOICE):
+                if q_content[i + 1].startswith(MULTIPLE_CHOICE):
                     question_type = "multichoice"
-                    question_opts["A"] = content[i + 1][3:]
-                    question_opts["B"] = content[i + 2][3:]
-                    question_opts["C"] = content[i + 3][3:]
-                    question_opts["D"] = content[i + 4][3:]
-                    question_opts["E"] = content[i + 5][3:]
-                elif content[i + 1].startswith(TRUE_FALSE):
+                    question_opts["A"] = q_content[i + 1][3:]
+                    question_opts["B"] = q_content[i + 2][3:]
+                    question_opts["C"] = q_content[i + 3][3:]
+                    question_opts["D"] = q_content[i + 4][3:]
+                    question_opts["E"] = q_content[i + 5][3:]
+                elif q_content[i + 1].startswith(TRUE_FALSE):
                     question_type = "truefalse"
-                    question_opts["A"] = content[i + 1][3:]
-                    question_opts["B"] = content[i + 2][3:]
+                    question_opts["A"] = q_content[i + 1][3:]
+                    question_opts["B"] = q_content[i + 2][3:]
                 question = Question(question_name, question_text, question_type, question_opts)
+                if question_text in a_content:
+                    a_index = a_content.index(question_text)
+                    question.set_ans(a_content[a_index + 1][3:])
                 question_list.append(question)
 
         impl = getDOMImplementation()
@@ -76,3 +88,4 @@ for docx_file in os.listdir(DOCX_DIR):
 
         with open(f"{XML_DIR}/{docx_file[0:23]}.xml", "w") as f:
             f.write(quiz_elem.toprettyxml())
+
