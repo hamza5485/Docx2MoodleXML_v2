@@ -48,6 +48,8 @@ class Question:
         question.appendChild(name)
         question.appendChild(questiontext)
         print('name=', self.q_name)
+        print('type=', self.q_type)
+        print('text=', self.q_text)
         print('answer=', self.q_ans)
         for k in self.q_opts.keys():
             print('opts= ', self.q_opts[k])

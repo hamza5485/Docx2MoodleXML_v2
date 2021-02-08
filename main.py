@@ -1,5 +1,6 @@
 import os
 from xml.dom.minidom import getDOMImplementation
+import re
 
 import docx
 
@@ -33,17 +34,21 @@ for docx_file in os.listdir(DOCX_Q_DIR):
                     else:
                         opts = p.text
                         q_content.append(opts)
-        # print(q_content)
 
         for answer_file in os.listdir(DOCX_A_DIR):
             if f"{name_arr[0]} {name_arr[1]}" in answer_file:
                 answer_file_path = DOCX_A_DIR + answer_file
+                counter = 0
                 for index, p in enumerate(docx.Document(answer_file_path).paragraphs):
                     if index == 0:
                         pass
                     else:
                         if p.text != "":
-                            a_content.append(p.text)
+                            if counter <= 1:
+                                a_content.append(p.text)
+                                counter += 1
+                            else:
+                                counter = 0
 
         for i, e in enumerate(q_content):
             if not (e.startswith(MULTIPLE_CHOICE) or e.startswith(TRUE_FALSE) or e.startswith(
@@ -64,10 +69,25 @@ for docx_file in os.listdir(DOCX_Q_DIR):
                     question_opts["A"] = q_content[i + 1][3:]
                     question_opts["B"] = q_content[i + 2][3:]
                 question = Question(question_name, question_text, question_type, question_opts)
-                if question_text in a_content:
-                    a_index = a_content.index(question_text)
+                # checking for answers
+                # need to isLower() and remove special chars
+                temp_text = re.sub(r"[^a-zA-Z0-9]+", ' ', question_text.lower())
+                if temp_text in [re.sub(r"[^a-zA-Z0-9]+", ' ', a.lower()) for a in a_content]:
+                    a_index = [re.sub(r"[^a-zA-Z0-9]+", ' ', a.lower()) for a in a_content].index(temp_text)
                     question.set_ans(a_content[a_index + 1][3:])
+                else:
+                    # if answer still no found: take manual input
+                    print("------------------")
+                    print(f"404 not found:  {question_name} --- {question_text}")
+                    answer = input(f"Enter answer manually: ")
+                    print(f"you entered: {answer}")
+                    question.set_ans(answer)
+                    print("------------------")
                 question_list.append(question)
+                """
+                ***ISSUE*** UNLIKE ALL OTHER COURSES, CNFAM XML FILES STILL HAVE `.DOC` IN THEIR NAME:
+                    DOMAIN_03_QUESTION.doc.xml <-- ??
+                """
 
         impl = getDOMImplementation()
         dom = impl.createDocument(None, "quiz", None)
