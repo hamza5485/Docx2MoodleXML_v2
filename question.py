@@ -3,14 +3,11 @@ class Question:
         self.q_name = q_name
         self.q_text = q_text
         self.q_type = q_type
-        self.q_ans = self.__answer(q_opts)
+        self.q_ans = ''
         self.q_opts = self.__clean_opts(q_opts)
 
-    @staticmethod
-    def __answer(opts):
-        for k in opts:
-            if "_ANSWER_" in opts[k]:
-                return k
+    def set_ans(self, answer):
+        self.q_ans = answer
 
     @staticmethod
     def __clean_opts(opts):
@@ -50,9 +47,14 @@ class Question:
         questiontext = self.__atr_to_xml(dom, "questiontext", self.q_text, {"format": "html"})
         question.appendChild(name)
         question.appendChild(questiontext)
+        print('name=', self.q_name)
+        print('type=', self.q_type)
+        print('text=', self.q_text)
+        print('answer=', self.q_ans)
         for k in self.q_opts.keys():
+            print('opts= ', self.q_opts[k])
             answer = self.__atr_to_xml(dom, "answer", self.q_opts[k],
-                                       {"fraction": "100"} if self.q_ans == k else {"fraction": "0"}, True)
+                                       {"fraction": "100"} if self.q_ans == self.q_opts[k] else {"fraction": "0"}, True)
             question.appendChild(answer)
         # penalty = dom.createElement("penalty")
         # penalty.appendChild(dom.createTextNode("1"))
